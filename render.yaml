@@ -1,0 +1,24 @@
+# Render Blueprint: API Express + Postgres (piano free).
+# Dashboard Render -> New -> Blueprint -> seleziona il repo.
+databases:
+  - name: spese-db
+    plan: free
+    databaseName: spese_personali
+    user: spese
+
+services:
+  - type: web
+    name: spese-api
+    runtime: node
+    plan: free
+    # Il piano free non ha preDeployCommand: lo schema si applica a fine build.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build && pnpm db:push
+    startCommand: node artifacts/api-server/dist/index.cjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: spese-db
+          property: connectionString

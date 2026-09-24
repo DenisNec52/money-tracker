@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/api-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=dist/index.cjs --packages=bundle --external:pg-native",
+    "start": "node --env-file-if-exists=../../.env dist/index.cjs"
+  },
+  "dependencies": {
+    "@workspace/api-zod": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "cors": "^2.8.5",
+    "drizzle-orm": "catalog:",
+    "express": "^5.1.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "catalog:",
+    "esbuild": "^0.25.0",
+    "tsx": "catalog:"
+  }
+}

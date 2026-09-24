@@ -1,0 +1,165 @@
+openapi: 3.1.0
+info:
+  title: Gestione Spese Personali API
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        "200":
+          description: Server attivo
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [ok] }
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      parameters:
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/MonthOptional"
+      responses:
+        "200":
+          description: Movimenti del periodo, dal più recente
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Transaction" }
+    post:
+      operationId: createTransaction
+      tags: [transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionInput" }
+      responses:
+        "201":
+          description: Movimento creato
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+  /transactions/{id}:
+    delete:
+      operationId: deleteTransaction
+      tags: [transactions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "204": { description: Eliminato }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /summary:
+    get:
+      operationId: getSummary
+      tags: [stats]
+      parameters:
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/MonthOptional"
+      responses:
+        "200":
+          description: Totali del periodo e uscite per categoria
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Summary" }
+  /stats/monthly:
+    get:
+      operationId: getMonthlyStats
+      tags: [stats]
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: Entrate e uscite per ciascuno dei 12 mesi dell'anno
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MonthlyStat" }
+components:
+  parameters:
+    Year:
+      name: year
+      in: query
+      required: true
+      schema: { type: integer, minimum: 2000, maximum: 2100 }
+    MonthOptional:
+      name: month
+      in: query
+      required: false
+      description: 1-12; se assente vale tutto l'anno
+      schema: { type: integer, minimum: 1, maximum: 12 }
+  schemas:
+    TransactionType:
+      type: string
+      enum: [entrata, uscita]
+    TransactionInput:
+      type: object
+      required: [type, amount, category, date]
+      properties:
+        type: { $ref: "#/components/schemas/TransactionType" }
+        amount: { type: number, minimum: 0.01, maximum: 1000000000 }
+        category: { type: string, minLength: 1, maxLength: 50 }
+        description: { type: string, maxLength: 200 }
+        date: { type: string, format: date }
+    Transaction:
+      allOf:
+        - $ref: "#/components/schemas/TransactionInput"
+        - type: object
+          required: [id, description, createdAt]
+          properties:
+            id: { type: integer }
+            description: { type: string }
+            createdAt: { type: string, format: date-time }
+    CategoryTotal:
+      type: object
+      required: [category, total]
+      properties:
+        category: { type: string }
+        total: { type: number }
+    Summary:
+      type: object
+      required: [entrate, uscite, saldo, uscitePerCategoria]
+      properties:
+        entrate: { type: number }
+        uscite: { type: number }
+        saldo: { type: number }
+        uscitePerCategoria:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryTotal" }
+    MonthlyStat:
+      type: object
+      required: [month, entrate, uscite]
+      properties:
+        month: { type: integer, minimum: 1, maximum: 12 }
+        entrate: { type: number }
+        uscite: { type: number }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        details: {}
+  responses:
+    ValidationError:
+      description: Dati non validi
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Non trovato
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }

@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+body {
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-slate-50);
+  color: var(--color-slate-900);
+}
